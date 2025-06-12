@@ -33,7 +33,7 @@ spec:
               mountPath: /mnt/newrelic
       containers:
       - name: saludo
-        image: danielsabana/cualquiercosa:0e09d3a574d40a87dac18e2bb8b360d5155956b3
+        image: danielsabana/cualquiercosa:3de246a936f9a26328b160d79c5fa9158bbeb593
         ports:
         - containerPort: 8080
         envFrom:
