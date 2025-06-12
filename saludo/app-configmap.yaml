@@ -11,3 +11,4 @@ data:
   DB_HOST: "217.76.49.138"
   DB_DATABASE: "prueba_conection"
   DB_USER: "link"
+  CUALQUIERCOSA: "xxx"
