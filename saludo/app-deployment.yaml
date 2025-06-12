@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saludo
+  labels:
+    app: saludo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saludo
+  template:
+    metadata:
+      labels:
+        app: saludo
+    spec:
+      volumes:
+        - name: newrelic-agent
+          emptyDir: {}
+      initContainers:
+        - name: download-newrelic-agent
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache curl unzip && \
+              curl -L https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip -o /tmp/newrelic-java.zip && \
+              unzip /tmp/newrelic-java.zip -d /mnt/newrelic && \
+              ls -l /mnt/newrelic
+          volumeMounts:
+            - name: newrelic-agent
+              mountPath: /mnt/newrelic
+      containers:
+      - name: saludo
+        image: danielsabana/cualquiercosa:0e09d3a574d40a87dac18e2bb8b360d5155956b3
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: saludo-config
+          - secretRef:
+              name: saludo-secret
+        volumeMounts:
+          - name: newrelic-agent
+            mountPath: /opt/newrelic
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        startupProbe: #Arrancamos?????
+          httpGet:
+            path: /saludo
+            port: 8080
+          initialDelaySeconds: 60 #esta directamente relacionado con los recursos que tiene para arrancar
+        readinessProbe: #Ok, como ya arrancaste, te voy a estar haciendo peticiones para ver si estas bien.
+          httpGet:
+            path: /saludo
+            port: 8080
+          initialDelaySeconds: 25 #esta directamente relacionado con los recursos que tiene para arrancar  
+          periodSeconds: 10 #cada cuanto corre la sonda
+          failureThreshold: 5 #cuantos fallos toleramos  para decir que murio
+          timeoutSeconds: 2 #tiempo maximo de respuesta
+
+
+#Por qué no escalamos basados en memoria en aplicaicones Java?

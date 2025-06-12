@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pago
+  labels:
+    app: pago
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pago
+  template:
+    metadata:
+      labels:
+        app: pago
+    spec:
+      volumes:
+        - name: newrelic-agent
+          emptyDir: {}
+      initContainers:
+        - name: download-newrelic-agent
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache curl unzip && \
+              curl -L https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip -o /tmp/newrelic-java.zip && \
+              unzip /tmp/newrelic-java.zip -d /mnt/newrelic && \
+              ls -l /mnt/newrelic
+          volumeMounts:
+            - name: newrelic-agent
+              mountPath: /mnt/newrelic
+      containers:
+      - name: pago
+        image: danielsabana/pago:1.1.0
+        ports:
+        - containerPort: 8080
+        env:
+          - name: NEW_RELIC_LICENSE_KEY
+            value: "0ab6bc96a296d1792fb4bc4c7030f5b1FFFFNRAL"
+            #valueFrom:
+             # secretKeyRef:
+              #  name: newrelic-license
+               # key: license
+          - name: NEW_RELIC_APP_NAME
+            value: "pago"
+          - name: NEW_RELIC_LOG
+            value: "stdout"
+          - name: JAVA_TOOL_OPTIONS
+            value: "-javaagent:/opt/newrelic/newrelic/newrelic.jar"
+        volumeMounts:
+          - name: newrelic-agent
+            mountPath: /opt/newrelic
